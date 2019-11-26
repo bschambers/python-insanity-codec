@@ -1,0 +1,2 @@
+* Python Insanity Codec
+This is the python port of the Insanity Codec.
