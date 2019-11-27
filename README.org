@@ -1,2 +1,24 @@
 * Python Insanity Codec
+
 This is the python port of the Insanity Codec.
+
+* Usage
+** Using in the python REPL
+
+Navigate to the dir containing the package dir, OR put package on python path.
+
+Start the python repl:
+
+$ python3
+
+>>> from insanitycodec import ic_codec as ic
+
+>>> ic.encode_string('hello') => '104 101 108 108 111'
+
+>>> ic.decode_string('104 101 108 108 111') => 'hello'
+
+* License
+
+Copyright 2019-present B. S. Chambers.
+
+Distributed under GPL, version 3.
