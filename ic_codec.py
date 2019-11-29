@@ -1,8 +1,29 @@
 # Copyright 2019-present B. S. Chambers --- Distributed under GPL, version 3
 
 from io import StringIO
+import re
 
 ############################# VARIABLES ##############################
+
+default_settings = [True, True, True, True, True, True]
+
+def get_flag_encode_retain_unknown(settings):
+    return settings[0]
+
+def get_flag_encode_wrap_unknown(settings):
+    return settings[1]
+
+def get_flag_encode_unwrap_literals(settings):
+    return settings[2]
+
+def get_flag_decode_retain_unknown(settings):
+    return settings[3]
+
+def get_flag_decode_wrap_unknown(settings):
+    return settings[4]
+
+def get_flag_decode_unwrap_literals(settings):
+    return settings[5]
 
 default_cipher = {
     "a" : ["97"],
@@ -88,32 +109,149 @@ faberge_zoot_suit_cipher = {
     "y" : ["opportune"],
     "z" : ["mars rover", "Rainham Common", "rainham common"]}
 
-############################## ENCODING ##############################
+######################### UTILITY FUNCTIONS ##########################
 
-def encode_char(c, cipher=default_cipher):
-    """Returns the encoded value of a char or empty string if not recognised.
+def unpack_settings_string(text):
+    """Accepts a string and returns a list of boolean values.
 
-      c -- a string which is a single character long.
-      cipher -- the cipher to use.
-      """
-    if c in cipher:
-        return cipher[c][0]
+    The length of the list returned may be anything from zero to six.
+
+    The values of the output list are found by examining TEXT one character at a
+    time. 'T' or 't' count as true, 'N' or 'n' count as false (nil). All other
+    characters are ignored.
+
+    """
+    output = []
+    matches = re.findall('[tTnN]', text)
+    for item in matches:
+        if item.lower() == 't':
+            output.append(True)
+        else:
+            output.append(False)
+        if len(output) >= 6:
+            return output
+    return output
+
+def pad_and_trim_settings_list(settings):
+    """Trim or pad settings-list if required and return the result.
+
+    The list returned will be a list of six boolean values. If the length of the
+    input list is less than six then it will be padded out with True.
+
+    The six values represent these parameters (in this order):
+
+    encode_retain_unknown
+    encode_wrap_unknown
+    encode_unwrap_literals
+    decode_retain_unknown
+    decode_wrap_unknown
+    decode_unwrap_literals
+    """
+    out = []
+    for n in range(6):
+        out.append(settings.pop(0) if settings else True)
+    return out
+
+def is_wrapped_literal(text):
+    """Returns TEXT if TEXT is a properly formed bracketed literal string, otherwise returns NIL.
+
+    To be properly formed the first and last characters of the string
+    must be '[' and ']' respectively."""
+    if text[:1] == "[" and text[-1:] == "]":
+        return text
     return None
 
-def encode_string(text, cipher=default_cipher):
+def unwrap_wrapped_literal(text):
+    if is_wrapped_literal(text):
+        return text[1:-1]
+    return text
+
+def literal_passage_at(text, index):
+    """Returns the square-bracketed literal passage starting at INDEX.
+
+    If the character at INDEX is not an opening square-bracket, or if there is
+    no matched closing square bracket then NIL is returned.
+
+    """
+    out = ""
+    num_parens_open = 0
+    char = text[index]
+    # process first char
+    if char == '[':
+        num_parens_open += 1
+        out += char
+    # if opening bracket was found, look for closing bracket
+    while num_parens_open > 0:
+        index += 1
+        char = text[index]
+        out += char
+        if char == '[':
+            num_parens_open += 1
+        elif char == ']':
+            num_parens_open -= 1
+    # only return output string if parens are balanced
+    if out and num_parens_open == 0:
+        return out;
+    return None
+
+############################## ENCODING ##############################
+
+def encode_char(char, cipher=default_cipher, settings=default_settings):
+    """Returns the encoded value of a char or empty string if not recognised.
+
+    c -- a string which is a single character long.
+    cipher -- the cipher to use.
+    """
+    c = char.lower()
+    if c in cipher:
+        return cipher[c][0]
+    # unknown symbol
+    if get_flag_encode_retain_unknown(settings):
+        if get_flag_encode_wrap_unknown(settings):
+            return '[' + c + ']'
+        return c
+    return None
+
+def encode_symbol_at(text, index, cipher=default_cipher, settings=default_settings):
+    """Encode the symbol at INDEX of TEXT, returning a list of two elements, the
+    encoded symbol, and the length of the symbol encoded.
+
+    The resulting encoded symbol may be either a character, NIL, or a
+    square-bracketed literal passage.
+
+    A literal passage will only be returned if INDEX falls on the opening
+    square-bracket AND there is a matching closing square-bracket later in the
+    string.
+
+    """
+    # literal passage
+    literal = literal_passage_at(text, index)
+    if literal:
+        if not get_flag_encode_retain_unknown(settings):
+            return (None, len(literal))
+        elif get_flag_encode_unwrap_literals(settings):
+            return (unwrap_wrapped_literal(literal), len(literal))
+        else:
+            return (literal, len(literal))
+    # any other (single character) symbol
+    return (encode_char(text[index], cipher, settings), 1)
+
+def encode_string(text, cipher=default_cipher, settings_str=""):
+    settings = unpack_settings_string(settings_str) if settings_str else default_settings
+    settings = pad_and_trim_settings_list(settings)
+    index = 0
     words = []
-    for c in text:
-        next_word = encode_char(c, cipher)
-        if next_word:
-            words.append(next_word)
+    while index < len(text):
+        (w, step) = encode_symbol_at(text, index, cipher, settings)
+        if w: words.append(w)
+        index += step
     return " ".join(words)
 
 ############################## DECODING ##############################
 
 def join_strings(a, b):
-    """Joins two strings making sure to leave exactly one space between them and no
-whitespace at either end.
-
+    """Joins two strings making sure to leave exactly one space between them and
+    no whitespace at either end.
     """
     aa = a.strip()
     bb = b.strip()
@@ -122,8 +260,9 @@ whitespace at either end.
     return " ".join([aa, bb])
 
 def get_match_list(text, cipher=default_cipher):
-    """Returns a set of key/value pairs for which text matches the start of one of
-the values."""
+    """Returns a set of key/value pairs for which text matches the start of one
+    of the values.
+    """
     matches = []
     for item in cipher.items():
         add = False
@@ -136,10 +275,9 @@ the values."""
 
 def get_match_if_complete(text, match_items):
     """If text is a complete match with one of the match-items then return that
-item, if not then return None.
+    item, if not then return None.
 
-Return tuple containing (text, match_item)
-
+    Return tuple containing (text, match_item)
     """
     for m in match_items:
         for val in m[1]:
@@ -148,7 +286,6 @@ Return tuple containing (text, match_item)
     return None
 
 def decode_string(text, cipher=default_cipher):
-
     words = text.split()
     current_chunk = ""
     completely_matched_items = []
