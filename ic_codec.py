@@ -8,21 +8,59 @@ import re
 default_settings = [True, True, True, True, True, True]
 
 def get_flag_encode_retain_unknown(settings):
+    """If True then unknown characters and square-bracket-wrapped literal passages
+    will be retained during encoding.
+
+    EXAMPLE:
+    "Hi, Bob!" => "corn zoot suit ,   Theodore corncob Theodore !"
+    """
     return settings[0]
 
 def get_flag_encode_wrap_unknown(settings):
+    """If True then any unknown characters retained during encoding will be wrapped
+    in square brackets.
+
+    Square-bracket-wrapped literal passages will be retained as-is, rather than
+    being double-wrapped.
+
+    EXAMPLE:
+    "Hi, Bob!" => "corn zoot suit [,] [ ] Theodore corncob Theodore [!]"
+    """
     return settings[1]
 
 def get_flag_encode_unwrap_literals(settings):
+    """If True then during encoding, any square-bracket-wrapped literal passages
+    will be unwrapped and then included as-it.
+
+    EXAMPLE:
+    "Hi, [Bob]!" => \"corn zoot suit ,   Bob !"
+    """
     return settings[2]
 
 def get_flag_decode_retain_unknown(settings):
+    """If NON-NIL then unknown words or symbols will be retained during decoding.
+
+    EXAMPLE:
+    "corn zoot suit , blastocyst Theodore corncob Theodore !" => "hi,blastocystbob"
+    """
     return settings[3]
 
 def get_flag_decode_wrap_unknown(settings):
+    """If NON-NIL then any unknown words retained during decoding will be wrapped in
+    square brackets.
+
+    EXAMPLE:
+    "corn zoot suit , blastocyst Theodore corncob Theodore !" => "hi[,][blastocyst]bob[!]\"
+    """
     return settings[4]
 
 def get_flag_decode_unwrap_literals(settings):
+    """If NON-NIL then during decoding, any square-bracket-wrapped literal passages
+    will be unwrapped and then included as-it.
+
+    EXAMPLE:
+    "Theodore corncob Theodore [ and Theodore]" => "bob and Theodore"
+    """
     return settings[5]
 
 default_cipher = {
@@ -99,7 +137,7 @@ faberge_zoot_suit_cipher = {
     "o" : ["dynamic solutions", "kowloon", "kwik-save"],
     "p" : ["singing", "foundations of parasitology"],
     "q" : ["mekon", "cobblers"],
-    "r" : ["tripe"],
+    "r" : ["tripe", "blastocyst", "lattitude"],
     "s" : ["magestic"],
     "t" : ["middling", "husk"],
     "u" : ["under par"],
@@ -119,7 +157,6 @@ def unpack_settings_string(text):
     The values of the output list are found by examining TEXT one character at a
     time. 'T' or 't' count as true, 'N' or 'n' count as false (nil). All other
     characters are ignored.
-
     """
     output = []
     matches = re.findall('[tTnN]', text)
@@ -148,8 +185,9 @@ def pad_and_trim_settings_list(settings):
     decode_unwrap_literals
     """
     out = []
+    temp = settings.copy()
     for n in range(6):
-        out.append(settings.pop(0) if settings else True)
+        out.append(temp.pop(0) if temp else True)
     return out
 
 def is_wrapped_literal(text):
@@ -171,7 +209,6 @@ def literal_passage_at(text, index):
 
     If the character at INDEX is not an opening square-bracket, or if there is
     no matched closing square bracket then NIL is returned.
-
     """
     out = ""
     num_parens_open = 0
@@ -193,6 +230,38 @@ def literal_passage_at(text, index):
     if out and num_parens_open == 0:
         return out;
     return None
+
+def split_text(text):
+    """Split string by whitespace, but treat any passage contained within square
+    brackets as a single word, even if it contains whitespace.
+    """
+    start = 0
+    index = 0
+    num_parens_open = 0
+    current_char = ""
+    out = []
+    # iterate one character at a time
+    while index < len(text):
+        current_char = text[index]
+        # count number of square brackets opened & closed
+        if current_char == "[":
+            num_parens_open += 1
+        elif current_char == "]":
+            num_parens_open -= 1
+            if num_parens_open < 0:
+                num_parens_open = 0
+        # if parentheses are balanced, check for space
+        elif num_parens_open == 0 and current_char == " ":
+            # only add if string has non-zero length
+            if start != index:
+                out.append(text[start:index])
+            # start next chunk
+            start = index + 1
+        index += 1
+    # add final word
+    if start != index:
+        out.append(text[start:index])
+    return out
 
 ############################## ENCODING ##############################
 
@@ -222,7 +291,6 @@ def encode_symbol_at(text, index, cipher=default_cipher, settings=default_settin
     A literal passage will only be returned if INDEX falls on the opening
     square-bracket AND there is a matching closing square-bracket later in the
     string.
-
     """
     # literal passage
     literal = literal_passage_at(text, index)
@@ -285,34 +353,52 @@ def get_match_if_complete(text, match_items):
                 return (text, m)
     return None
 
-def decode_string(text, cipher=default_cipher):
-    words = text.split()
+def decode_string(text, cipher=default_cipher, settings_str=""):
+
+    settings = unpack_settings_string(settings_str) if settings_str else default_settings
+    settings = pad_and_trim_settings_list(settings)
+
+    words = split_text(text)
     current_chunk = ""
     completely_matched_items = []
     output_list = []
 
     while words:
-
         # update variables
         current_chunk = join_strings(current_chunk, words.pop(0))
         matches = get_match_list(current_chunk, cipher)
         is_valid = len(matches) > 0
 
         if is_valid:
-
-            # is chunk complete?
+            # CHUNK IS VALID: is it complete?
             complete_match = get_match_if_complete(current_chunk, matches)
             if complete_match:
                 completely_matched_items.append(complete_match)
 
         else:
+            # CHUNK NOT VALID:
             if completely_matched_items:
                 # add match to output_list
                 recent_item = completely_matched_items.pop()
                 output_list.append(recent_item[1][0])
                 # put remainder back on words list
                 unmatched_part = current_chunk[len(recent_item[0]):]
-                words.insert(0, unmatched_part)
+                words.insert(0, unmatched_part.strip())
+
+            # no complete chunks: retain untranslated chunk if required by settings
+            elif get_flag_decode_retain_unknown(settings):
+                # wrapped literal: unwrap if required by settings
+                if is_wrapped_literal(current_chunk):
+                    if get_flag_decode_unwrap_literals(settings):
+                        output_list.append(unwrap_wrapped_literal(current_chunk))
+                    else:
+                        output_list.append(current_chunk)
+                # other unknown symbol: add wrapping if required by settings
+                else:
+                    if get_flag_decode_wrap_unknown(settings):
+                        output_list.append("[" + current_chunk + "]")
+                    else:
+                        output_list.append(current_chunk)
 
             # always reset if not valid
             current_chunk = ""

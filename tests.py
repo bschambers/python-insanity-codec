@@ -37,6 +37,17 @@ class TestInsanityCodec(unittest.TestCase):
         self.assertEqual("[abc", ic.unwrap_wrapped_literal("[abc"))
         self.assertEqual(" [abc]", ic.unwrap_wrapped_literal(" [abc]"))
 
+    def test_split_text_wrapped_literal_passage_treated_as_single_word(self):
+        self.assertEqual(["hang", "glider", "library", "library", "liability"],
+                         ic.split_text("hang glider library library liability"))
+        self.assertEqual(["nicety", "[ ]", "duck", "vendor", "[ ]", "sandwich", "train", "liability"],
+                         ic.split_text("nicety [ ] duck vendor [ ] sandwich train liability"))
+        self.assertEqual(["dog", "[bannana flap jack ]", "apple", "[....!]", "crown", "portability"],
+                         ic.split_text("dog [bannana flap jack ] apple [....!] crown portability"))
+        # handles nested brackets ok
+        self.assertEqual(["dog", "[bannana [flap] jack ]", "apple", "[[crown]]"],
+                         ic.split_text("dog [bannana [flap] jack ] apple [[crown]]"))
+
     def test_unpack_settings_string(self):
         self.assertEqual([False, False],\
                          ic.unpack_settings_string( "nN"))
@@ -58,6 +69,12 @@ class TestInsanityCodec(unittest.TestCase):
                          ic.pad_and_trim_settings_list([True, True, False, False, True, False]))
         self.assertEqual([False, False, False, True, True, True],\
                          ic.pad_and_trim_settings_list([False, False, False, True, True, True, False, True, True, True,]))
+
+    def test_pad_and_trim_does_not_alter_input(self):
+        settings = [True, True, False, False, False, True, True, True]
+        result = ic.pad_and_trim_settings_list(settings)
+        self.assertEqual(8, len(settings))
+        self.assertEqual([True, True, False, False, False, True, True, True], settings)
 
     def test_retrieve_settings(self):
         settings = [True, False, False, True, False, True]
@@ -140,7 +157,7 @@ class TestInsanityCodec(unittest.TestCase):
         self.assertEqual("country mouse undermine the fortifications corncob quality control quincunx frantic bannana fortifications",\
                          ic.encode_string("21st of May", cipher, set_str))
 
-    def test_encode_string_retaining_unknown_unwrapped(self):
+    def test_encode_string_retaining_unknown(self):
         set_str = "tnnnnn"
         cipher = ic.magenta_ornithopter_cipher
         self.assertEqual("corn quality control supervisor rumble strip rumble strip corncob !",\
@@ -172,7 +189,7 @@ class TestInsanityCodec(unittest.TestCase):
         self.assertEqual("[2] [1] country mouse undermine the fortifications [ ] corncob quality control fungible hacienda",\
                          ic.encode_string("21st of[fungible hacienda]", cipher, set_str))
 
-############################## DECODING ##############################
+    ############################## DECODING ##############################
 
     def test_get_match_list(self):
         items = ic.get_match_list("9")
@@ -214,11 +231,50 @@ class TestInsanityCodec(unittest.TestCase):
         self.assertEqual(("corn control chief", ("a", ["albatross", "corn control chief", "formaldehyde"])),\
                          ic.get_match_if_complete("corn control chief", matches))
 
-    def test_decode_string(self):
+    def test_decode_string_simple(self):
         self.assertEqual('hello', ic.decode_string('104 101 108 108 111'))
         self.assertEqual('hello',\
                          ic.decode_string('corn quality control supervisor rumble strip rumble strip corncob',\
                                           ic.magenta_ornithopter_cipher))
+
+    def test_decode_string_discard_unknown(self):
+        cipher = ic.magenta_ornithopter_cipher
+        set_str = "nnnnnn"
+        self.assertEqual("hi", ic.decode_string("corn faberge zoot suit !", cipher, set_str))
+        self.assertEqual("abc", ic.decode_string("frantic bannana literal Theodore [ ] torque wrench mint julep", cipher, set_str))
+
+    def test_decode_string_retain_unknown(self):
+        cipher = ic.magenta_ornithopter_cipher
+        set_str = "nnntnn"
+        self.assertEqual("hello!",\
+                         ic.decode_string("corn quality control supervisor rumble strip rumble strip corncob !", cipher, set_str))
+        self.assertEqual("comingsoon",\
+                         ic.decode_string("coming country mouse corncob corncob dormouse", cipher, set_str))
+        self.assertEqual("hfartfaceellopingpong",\
+                         ic.decode_string("corn fart face quality control supervisor rumble strip rumble strip corncob ping pong   ", cipher, set_str))
+
+    def test_decode_string_retain_unknown_wrapped(self):
+        cipher = ic.magenta_ornithopter_cipher
+        set_str = "nnnttn"
+        self.assertEqual("[coming]soon",\
+                         ic.decode_string("coming country mouse corncob corncob dormouse", cipher, set_str))
+        self.assertEqual("h[fart][face]ello[ping][pong]",\
+                         ic.decode_string("corn fart face quality control supervisor rumble strip rumble strip corncob ping pong   ", cipher, set_str))
+
+    def test_decode_string_unwrap_literals(self):
+        cipher = ic.magenta_ornithopter_cipher
+        set_str = "nnnttt"
+        self.assertEqual("hi!", ic.decode_string("corn zoot suit [!]", cipher, set_str))
+        self.assertEqual("i am ben",\
+                         ic.decode_string("zoot suit [ ] frantic bannana quincunx [ ] theodore quality control supervisor dormouse", cipher, set_str))
+
+    def test_decode_string_multiword_character_codes_containing_other_codes(self):
+        """j = "Bill and Ted riding the zebra bareback"...
+        ... this contains "and" (r), "riding" (p), and "zebra" (v)."""
+        cipher = ic.magenta_ornithopter_cipher
+        # set_str = "nnnttt"
+        self.assertEqual("fishjam",\
+                         ic.decode_string("quality control zoot suit country mouse corn Bill and Ted riding the zebra bareback frantic bannana quincunx", cipher))
 
 if __name__ == '__main__':
     unittest.main()
