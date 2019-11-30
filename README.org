@@ -1,8 +1,30 @@
 * Python Insanity Codec
 
-This is the python port of the Insanity Codec.
+The Insanity Codec encodes and decodes text using easily defined substitution
+ciphers.
+
+The name and inspiration come from The Insanity Code, a very silly secret code
+which was devised by a boy named Odin who I know from my part-time day-job
+working in a public library.
+
+The original Insanity Code cipher is not included in this package because it is
+secret. The default cipher simply translates the letters of the alphabet
+[a-zA-Z] to and from their lowercase ascii codes. However, for testing purposes
+I have devised the Magenta Ornithopter cipher, which replicates all of the
+challenges of the original Insanity Code and is included in this package.
+
+It is a simple substitution cipher, but it's special characteristic is that each
+letter of the alphabet is replaced by a whole word, or sometimes a phrase
+consisting of several words.
+
+Encoding is a simple matter, but decoding is made more difficult by the fact
+that some of the single-word codes may also be part of the multi-word codes. For
+example, in the Magenta Ornithopter cipher: the code for "j" is "Bill and Ted
+riding the zebra bareback"... this contains "and" (r), "riding" (p) and "zebra"
+(v)."
 
 * Usage
+
 ** Using in the python REPL
 
 Navigate to the dir containing the package dir, OR put package on python path.
@@ -13,9 +35,146 @@ $ python3
 
 >>> from insanitycodec import ic_codec as ic
 
->>> ic.encode_string('hello') => '104 101 108 108 111'
+The default cipher encodes each letter as it's ascii code:
 
->>> ic.decode_string('104 101 108 108 111') => 'hello'
+>>> ic.encode('hello') => '104 101 108 108 111'
+
+>>> ic.decode('104 101 108 108 111') => 'hello'
+
+To use another cipher, pass it as the second argument:
+
+>>> ic.encode('hello', ic.magenta_ornithopter_cipher)
+    => 'corn quality control supervisor rumble strip rumble strip corncob'
+
+>>> ic.decode('corn quality control supervisor rumble strip rumble strip corncob', ic.magenta_ornithopter_cipher)
+    => 'hello'
+
+You can also pass in a settings-string if you like...
+
+... the first part of the settings-string determines whether of not unknown
+symbols are retained during encoding:
+
+>>> ic.encode('hi!', ic.magenta_ornithopter_cipher, "nnnnnn")
+    => 'corn zoot suit'
+
+>>> ic.encode('hi!', ic.magenta_ornithopter_cipher, "tnnnnn")
+    => 'corn zoot suit !'
+
+** Settings Strings (Treatment of Unknown Symbols)
+
+The encoding and decoding functions both accept an optional settings-string
+which if given, affects the treatment of unknown symbols.
+
+The settings-string encodes up to six boolean values, which if present, override
+the default values of the following parameters (in the same order that they are
+listed).
+
+- encode_retain_unknown
+- encode_wrap_unknown
+- encode_unwrap_literals
+- decode_retain_unknown
+- decode_wrap_unknown
+- decode_unwrap_literals
+
+The default value for all of these parameters is True. This means that a string
+can be encoded and decoded whilst retaining spaces and punctuation
+symbols. During encoding unknown symbols (e.g. space or full-stop) are retained
+and wrapped in square brackets. Because these symbols are enclosed in square
+brackets, they are treated as literals by the decoding function and are retained
+and unwrapped, thus returning the text to exactly the same state as before
+encoding.
+
+If there are less than six values then the later variables are left unaltered
+and any additional values after the first six are ignored.
+
+The values of the settings-string are found by examining the string one
+character at a time. 'T' or 't' count as true. 'N' or 'n' count as false
+(nil). All other characters are ignored.
+
+** Obfuscated Settings-Strings
+
+Because all characters except for [tTnN] are ignored it means that the settings
+can be embedded in a longer string if desired - here are some examples to
+demonstrate:
+
+These three are all equivalent...
+
+#+BEGIN_EXAMPLE
+"ttnttt"
+
+"the tiny tortured artificer"
+
+"Troglodytes frantically sacked the great Tree Fort of Weston-super-Mare!"
+#+END_EXAMPLE
+
+Square brackets show the positions of the six values in the last example...
+
+#+BEGIN_EXAMPLE
+"[T]roglody[t]es fra[n][t]ically sacked [t]he grea[t] Tree Fort of Weston-super-Mare!"
+#+END_EXAMPLE
+
+These three are also all equivalent...
+
+#+BEGIN_EXAMPLE
+"nnnnnn"
+
+"unknown bananna"
+
+"Beginning under John's sub-basement, the fissure extends deep into the centre of the earth."
+#+END_EXAMPLE
+
+Square brackets show the positions of the six values in the last example...
+
+#+BEGIN_EXAMPLE
+"Begi[n][n]i[n]g u[n]der Joh[n]'s sub-baseme[n]t, the fissure extends deep into the centre of the earth."
+#+END_EXAMPLE
+
+** Literal Passages
+
+Literal passages can be included by enclosing them in square brackets although
+if the setting for ...retain_unknown is not True then they will be discarded.
+
+* Defining New Ciphers
+
+A cipher is defined as a dictionary where the key is the plain-text symbol, and
+the value is a list of encoded equivalents.
+
+As an example, here is the definition of the Magenta Ornithopter cipher taken
+from the source code:
+
+#+BEGIN_SRC python :classname example
+magenta_ornithopter_cipher = {
+    "a" : ["frantic bannana"],
+    "b" : ["Theodore", "theodore"],
+    "c" : ["torque wrench"],
+    "d" : ["underscore"],
+    "e" : ["quality control supervisor"],
+    "f" : ["quality control"],
+    "g" : ["don't"],
+    "h" : ["corn"],
+    "i" : ["zoot suit"],
+    "j" : ["Bill and Ted riding the zebra bareback"],
+    "k" : ["cream cake"],
+    "l" : ["rumble strip"],
+    "m" : ["quincunx"],
+    "n" : ["dormouse"],
+    "o" : ["corncob"],
+    "p" : ["riding"],
+    "q" : ["mouse"],
+    "r" : ["and"],
+    "s" : ["country mouse"],
+    "t" : ["undermine the fortifications"],
+    "u" : ["town mouse"],
+    "v" : ["zebra"],
+    "w" : ["mortification of the flesh"],
+    "x" : ["modular"],
+    "y" : ["fortifications"],
+    "z" : ["Jeremy Corbyn"]}
+#+END_SRC
+
+* Dependencies
+
+Python 3 (tested with Python 3.6.8)
 
 * License
 
