@@ -37,9 +37,11 @@ $ python3
 
 The default cipher encodes each letter as it's ascii code:
 
->>> ic.encode('hello') => '104 101 108 108 111'
+>>> ic.encode('hello')
+    => '104 101 108 108 111'
 
->>> ic.decode('104 101 108 108 111') => 'hello'
+>>> ic.decode('104 101 108 108 111')
+    => 'hello'
 
 To use another cipher, pass it as the second argument:
 
@@ -172,9 +174,27 @@ magenta_ornithopter_cipher = {
     "z" : ["Jeremy Corbyn"]}
 #+END_SRC
 
+* Ciphers included in ic_codec.py
+** Default Cipher
+Encodes [azAZ] as their lower case ascii equivalents i.e. 'a' or 'A' => '97'.
+** Magenta Ornithopter Cipher
+Developed for use in the test suite. Magenta Ornithopter is designed to test all
+of the potential challenges which come may come up in encoding and decoding with
+this system.
+
+Features include:
+- multi-word character encodings
+- multi-word character codes which contain other shorter codes within them
+- character encodings with alternative spellings or versions
+** Fabergé Zoot Suit Cipher
+Experimental cipher still in development, and liable to change in future
+versions.
+
+This is a cipher where each letter may be encoded as /any one of several/
+different words or phrases.
 * Dependencies
 
-Python 3 (tested with Python 3.6.8)
+- Python 3 (tested with Python 3.6.8)
 
 * License
 
