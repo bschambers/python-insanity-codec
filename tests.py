@@ -145,49 +145,49 @@ class TestInsanityCodec(unittest.TestCase):
         self.assertEqual(("granny [smith]", 16), ic.encode_symbol_at(text, 10, cipher, sett))
 
     def test_encode_string_simple(self):
-        self.assertEqual("104 101 108 108 111", ic.encode_string('hello'))
+        self.assertEqual("104 101 108 108 111", ic.encode('hello'))
         self.assertEqual("corn quality control supervisor rumble strip rumble strip corncob",
-                         ic.encode_string('hello', ic.magenta_ornithopter_cipher))
+                         ic.encode('hello', ic.magenta_ornithopter_cipher))
 
     def test_encode_string_discarding_unknown(self):
         set_str = "nnnnnn"
         cipher = ic.magenta_ornithopter_cipher
         self.assertEqual("zoot suit frantic bannana quincunx Theodore zoot suit rumble strip rumble strip",\
-                         ic.encode_string("I am Bill!", cipher, set_str))
+                         ic.encode("I am Bill!", cipher, set_str))
         self.assertEqual("country mouse undermine the fortifications corncob quality control quincunx frantic bannana fortifications",\
-                         ic.encode_string("21st of May", cipher, set_str))
+                         ic.encode("21st of May", cipher, set_str))
 
     def test_encode_string_retaining_unknown(self):
         set_str = "tnnnnn"
         cipher = ic.magenta_ornithopter_cipher
         self.assertEqual("corn quality control supervisor rumble strip rumble strip corncob !",\
-                         ic.encode_string("hello!", cipher, set_str))
+                         ic.encode("hello!", cipher, set_str))
         self.assertEqual("zoot suit   frantic bannana quincunx   Theodore zoot suit rumble strip rumble strip !",\
-                         ic.encode_string("I am Bill!", cipher, set_str))
+                         ic.encode("I am Bill!", cipher, set_str))
         self.assertEqual("2 1 country mouse undermine the fortifications   corncob quality control   quincunx frantic bannana fortifications",\
-                         ic.encode_string("21st of May", cipher, set_str))
+                         ic.encode("21st of May", cipher, set_str))
         # don't encode square-bracketed literal passages
         self.assertEqual("2 1 country mouse undermine the fortifications   corncob quality control [fungible hacienda]",\
-                         ic.encode_string("21st of[fungible hacienda]", cipher, set_str))
+                         ic.encode("21st of[fungible hacienda]", cipher, set_str))
 
     def test_encode_string_retaining_unknown_wrapped(self):
         set_str = "ttnnnn"
         cipher = ic.magenta_ornithopter_cipher
         self.assertEqual("corn quality control supervisor rumble strip rumble strip corncob [!]",\
-                         ic.encode_string("Hello!", cipher, set_str))
+                         ic.encode("Hello!", cipher, set_str))
         self.assertEqual("zoot suit [ ] frantic bannana quincunx [ ] Theodore zoot suit rumble strip rumble strip [!]",\
-                         ic.encode_string("I am Bill!", cipher, set_str))
+                         ic.encode("I am Bill!", cipher, set_str))
         self.assertEqual("[2] [1] country mouse undermine the fortifications [ ] corncob quality control [ ] quincunx frantic bannana fortifications",\
-                         ic.encode_string("21st of May", cipher, set_str))
+                         ic.encode("21st of May", cipher, set_str))
         # don't encode square-bracketed literal passages
         self.assertEqual("[2] [1] country mouse undermine the fortifications [ ] corncob quality control [fungible hacienda]",\
-                         ic.encode_string("21st of[fungible hacienda]", cipher, set_str))
+                         ic.encode("21st of[fungible hacienda]", cipher, set_str))
 
     def test_encode_string_unwrapping_literals(self):
         set_str = "tttnnn"
         cipher = ic.magenta_ornithopter_cipher
         self.assertEqual("[2] [1] country mouse undermine the fortifications [ ] corncob quality control fungible hacienda",\
-                         ic.encode_string("21st of[fungible hacienda]", cipher, set_str))
+                         ic.encode("21st of[fungible hacienda]", cipher, set_str))
 
     ############################## DECODING ##############################
 
@@ -232,49 +232,60 @@ class TestInsanityCodec(unittest.TestCase):
                          ic.get_match_if_complete("corn control chief", matches))
 
     def test_decode_string_simple(self):
-        self.assertEqual('hello', ic.decode_string('104 101 108 108 111'))
+        self.assertEqual('hello', ic.decode('104 101 108 108 111'))
         self.assertEqual('hello',\
-                         ic.decode_string('corn quality control supervisor rumble strip rumble strip corncob',\
+                         ic.decode('corn quality control supervisor rumble strip rumble strip corncob',\
                                           ic.magenta_ornithopter_cipher))
 
     def test_decode_string_discard_unknown(self):
         cipher = ic.magenta_ornithopter_cipher
         set_str = "nnnnnn"
-        self.assertEqual("hi", ic.decode_string("corn faberge zoot suit !", cipher, set_str))
-        self.assertEqual("abc", ic.decode_string("frantic bannana literal Theodore [ ] torque wrench mint julep", cipher, set_str))
+        self.assertEqual("hi", ic.decode("corn faberge zoot suit !", cipher, set_str))
+        self.assertEqual("abc", ic.decode("frantic bannana literal Theodore [ ] torque wrench mint julep", cipher, set_str))
 
     def test_decode_string_retain_unknown(self):
         cipher = ic.magenta_ornithopter_cipher
         set_str = "nnntnn"
         self.assertEqual("hello!",\
-                         ic.decode_string("corn quality control supervisor rumble strip rumble strip corncob !", cipher, set_str))
+                         ic.decode("corn quality control supervisor rumble strip rumble strip corncob !", cipher, set_str))
         self.assertEqual("comingsoon",\
-                         ic.decode_string("coming country mouse corncob corncob dormouse", cipher, set_str))
+                         ic.decode("coming country mouse corncob corncob dormouse", cipher, set_str))
         self.assertEqual("hfartfaceellopingpong",\
-                         ic.decode_string("corn fart face quality control supervisor rumble strip rumble strip corncob ping pong   ", cipher, set_str))
+                         ic.decode("corn fart face quality control supervisor rumble strip rumble strip corncob ping pong   ", cipher, set_str))
 
     def test_decode_string_retain_unknown_wrapped(self):
         cipher = ic.magenta_ornithopter_cipher
         set_str = "nnnttn"
         self.assertEqual("[coming]soon",\
-                         ic.decode_string("coming country mouse corncob corncob dormouse", cipher, set_str))
+                         ic.decode("coming country mouse corncob corncob dormouse", cipher, set_str))
         self.assertEqual("h[fart][face]ello[ping][pong]",\
-                         ic.decode_string("corn fart face quality control supervisor rumble strip rumble strip corncob ping pong   ", cipher, set_str))
+                         ic.decode("corn fart face quality control supervisor rumble strip rumble strip corncob ping pong   ", cipher, set_str))
 
     def test_decode_string_unwrap_literals(self):
         cipher = ic.magenta_ornithopter_cipher
         set_str = "nnnttt"
-        self.assertEqual("hi!", ic.decode_string("corn zoot suit [!]", cipher, set_str))
+        self.assertEqual("hi!", ic.decode("corn zoot suit [!]", cipher, set_str))
         self.assertEqual("i am ben",\
-                         ic.decode_string("zoot suit [ ] frantic bannana quincunx [ ] theodore quality control supervisor dormouse", cipher, set_str))
+                         ic.decode("zoot suit [ ] frantic bannana quincunx [ ] theodore quality control supervisor dormouse", cipher, set_str))
 
     def test_decode_string_multiword_character_codes_containing_other_codes(self):
         """j = "Bill and Ted riding the zebra bareback"...
-        ... this contains "and" (r), "riding" (p), and "zebra" (v)."""
+        ... this contains "and" (r), "riding" (p), and "zebra" (v).
+        """
         cipher = ic.magenta_ornithopter_cipher
         # set_str = "nnnttt"
         self.assertEqual("fishjam",\
-                         ic.decode_string("quality control zoot suit country mouse corn Bill and Ted riding the zebra bareback frantic bannana quincunx", cipher))
+                         ic.decode("quality control zoot suit country mouse corn Bill and Ted riding the zebra bareback frantic bannana quincunx", cipher))
 
+    def test_decode_string_no_double_read_at_end_for_similar_symbols(self):
+        """e = "quality control supervisor"
+        f = "quality control"
+
+        tamfe
+        """
+        cipher = ic.magenta_ornithopter_cipher
+        text = 'undermine the fortifications frantic bannana quincunx quality control supervisor'
+        self.assertEqual("tame", ic.decode(text, cipher))
+        
 if __name__ == '__main__':
     unittest.main()

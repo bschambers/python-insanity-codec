@@ -304,7 +304,8 @@ def encode_symbol_at(text, index, cipher=default_cipher, settings=default_settin
     # any other (single character) symbol
     return (encode_char(text[index], cipher, settings), 1)
 
-def encode_string(text, cipher=default_cipher, settings_str=""):
+def encode(text, cipher=default_cipher, settings_str=""):
+    """Encode a string using the specified cipher and settings."""
     settings = unpack_settings_string(settings_str) if settings_str else default_settings
     settings = pad_and_trim_settings_list(settings)
     index = 0
@@ -353,14 +354,14 @@ def get_match_if_complete(text, match_items):
                 return (text, m)
     return None
 
-def decode_string(text, cipher=default_cipher, settings_str=""):
-
+def decode(text, cipher=default_cipher, settings_str=""):
+    """Decode a string using the specified cipher and settings."""
     settings = unpack_settings_string(settings_str) if settings_str else default_settings
     settings = pad_and_trim_settings_list(settings)
 
     words = split_text(text)
     current_chunk = ""
-    completely_matched_items = []
+    fully_matched_item = None
     output_list = []
 
     while words:
@@ -373,16 +374,15 @@ def decode_string(text, cipher=default_cipher, settings_str=""):
             # CHUNK IS VALID: is it complete?
             complete_match = get_match_if_complete(current_chunk, matches)
             if complete_match:
-                completely_matched_items.append(complete_match)
+                fully_matched_item = complete_match
 
         else:
             # CHUNK NOT VALID:
-            if completely_matched_items:
+            if fully_matched_item:
                 # add match to output_list
-                recent_item = completely_matched_items.pop()
-                output_list.append(recent_item[1][0])
+                output_list.append(fully_matched_item[1][0])
                 # put remainder back on words list
-                unmatched_part = current_chunk[len(recent_item[0]):]
+                unmatched_part = current_chunk[len(fully_matched_item[0]):]
                 words.insert(0, unmatched_part.strip())
 
             # no complete chunks: retain untranslated chunk if required by settings
@@ -402,11 +402,11 @@ def decode_string(text, cipher=default_cipher, settings_str=""):
 
             # always reset if not valid
             current_chunk = ""
-            completely_matched_items = []
+            fully_matched_item = None
 
-    # word-list exhausted: if any complete items remain add to output list
-    for item in completely_matched_items:
-        output_list.append(item[1][0])
+    # word-list exhausted: if there is a complete item add to output list
+    if fully_matched_item:
+        output_list.append(fully_matched_item[1][0])
 
     # join everything together with no spaces
     output = StringIO()
