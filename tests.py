@@ -278,14 +278,28 @@ class TestInsanityCodec(unittest.TestCase):
                          ic.decode("quality control zoot suit country mouse corn Bill and Ted riding the zebra bareback frantic bannana quincunx", cipher))
 
     def test_decode_string_no_double_read_at_end_for_similar_symbols(self):
-        """e = "quality control supervisor"
+        """Bug used to exist when code for char A is a substring at the beginning of
+        code for char B, and char B is last in the text.
+
+        EXAMPLE (using Magenta Ornithopter Cipher):
+
+        e = "quality control supervisor"
         f = "quality control"
 
-        tamfe
+        Code for F is substring at beginning of code for E.
+
+        Encoding "tame", and then decoding the result gave "tamfe".
+
+        The reason that this happened is that I was adding each complete match
+        to a list until I found the longest one. At the end of the decoding
+        loop, any remaining complete matches were dumped into the output. I
+        realised that I never need to keep more than the most recent complete
+        match (to back-track a single step when I can't find a longer one) -
+        problem solved.
         """
         cipher = ic.magenta_ornithopter_cipher
         text = 'undermine the fortifications frantic bannana quincunx quality control supervisor'
         self.assertEqual("tame", ic.decode(text, cipher))
-        
+
 if __name__ == '__main__':
     unittest.main()
