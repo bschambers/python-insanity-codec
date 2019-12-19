@@ -29,38 +29,46 @@ riding the zebra bareback"... this contains "and" (r), "riding" (p) and "zebra"
 
 Navigate to the dir containing the package dir, OR put package on python path.
 
-Start the python repl:
+Start the python repl (Python 3 or above) using the -i (interactive option):
 
-$ python3
+#+BEGIN_SRC shell
+python3 -i ic_codec.py
+#+END_SRC
 
->>> from insanitycodec import ic_codec as ic
+This will execute the file and then start the repl so that you can type in
+commands.
 
 The default cipher encodes each letter as it's ascii code:
 
->>> ic.encode('hello')
-    => '104 101 108 108 111'
-
->>> ic.decode('104 101 108 108 111')
-    => 'hello'
+#+BEGIN_SRC python
+encode('hello')
+# => '104 101 108 108 111'
+#+END_SRC
 
 To use another cipher, pass it as the second argument:
 
->>> ic.encode('hello', ic.magenta_ornithopter_cipher)
-    => 'corn quality control supervisor rumble strip rumble strip corncob'
+#+BEGIN_SRC python
+encode('hello', magenta_ornithopter_cipher)
+# => 'corn quality control supervisor rumble strip rumble strip corncob'
+#+END_SRC
 
->>> ic.decode('corn quality control supervisor rumble strip rumble strip corncob', ic.magenta_ornithopter_cipher)
-    => 'hello'
+#+BEGIN_SRC python
+decode('corn quality control supervisor rumble strip rumble strip corncob', magenta_ornithopter_cipher)
+# => 'hello'
+#+END_SRC
 
 You can also pass in a settings-string if you like...
 
 ... the first part of the settings-string determines whether of not unknown
 symbols are retained during encoding:
 
->>> ic.encode('hi!', ic.magenta_ornithopter_cipher, "nnnnnn")
-    => 'corn zoot suit'
+#+BEGIN_SRC python
+encode('hi!', magenta_ornithopter_cipher, "nnnnnn")
+#=> 'corn zoot suit'
 
->>> ic.encode('hi!', ic.magenta_ornithopter_cipher, "tnnnnn")
-    => 'corn zoot suit !'
+encode('hi!', magenta_ornithopter_cipher, "tnnnnn")
+#=> 'corn zoot suit !'
+#+END_SRC
 
 ** Settings Strings (Treatment of Unknown Symbols)
 
@@ -190,7 +198,7 @@ Features include:
 Experimental cipher still in development, and liable to change in future
 versions.
 
-This is a cipher where each letter may be encoded as /any one of several/
+This is a cipher where each letter may be encoded as /any one/ of several
 different words or phrases.
 * Dependencies
 
