@@ -121,30 +121,30 @@ magenta_ornithopter_cipher = {
 
 faberge_zoot_suit_cipher = {
     "a" : ["albatross", "formaldehyde"],
-    "b" : ["crab stick", "all for the"],
+    "b" : ["crab stick", "up pompeii"],
     "c" : ["dinosaurus", "quality control"],
     "d" : ["bungee", "fungible", "hacienda"],
     "e" : ["poleaxe", "star bannana", "unpleasant"],
-    "f" : ["brown"],
+    "f" : ["brown", "feckless"],
     "g" : ["indicator", "Jacob Rees-Mogg", "jacob rees-mogg"],
-    "h" : ["mitsubishi"],
+    "h" : ["mitsubishi", "stump", "laughable"],
     "i" : ["marvellous"],
-    "j" : ["twix"],
+    "j" : ["twix", "gyroscope", "retinal"],
     "k" : ["dromedary", "jailbreak", "fallout"],
-    "l" : ["morribund"],
+    "l" : ["morribund", "pantyhose"],
     "m" : ["maxwell house", "meal ticket"],
-    "n" : ["moonpig"],
+    "n" : ["moonpig", "neocortex", "leotard"],
     "o" : ["dynamic solutions", "kowloon", "kwik-save"],
     "p" : ["singing", "foundations of parasitology"],
     "q" : ["mekon", "cobblers"],
     "r" : ["tripe", "blastocyst", "lattitude"],
-    "s" : ["magestic"],
+    "s" : ["magestic", "transistor", "vanilla"],
     "t" : ["middling", "husk"],
-    "u" : ["under par"],
+    "u" : ["under par", "blunderbus"],
     "v" : ["magic bannana", "slim fit"],
     "w" : ["excalibur", "tardigrade"],
     "x" : ["planning"],
-    "y" : ["opportune"],
+    "y" : ["opportune", "fallout"],
     "z" : ["mars rover", "Rainham Common", "rainham common"]}
 
 ######################### UTILITY FUNCTIONS ##########################
@@ -306,7 +306,7 @@ def encode_symbol_at(text, index, cipher=default_cipher, settings=default_settin
 
 def encode(text, cipher=default_cipher, settings_str=""):
     """Encode a string using the specified cipher and settings."""
-    settings = unpack_settings_string(settings_str) if settings_str else default_settings
+    settings = unpack_settings_string(settings_str)
     settings = pad_and_trim_settings_list(settings)
     index = 0
     words = []
@@ -356,7 +356,7 @@ def get_match_if_complete(text, match_items):
 
 def decode(text, cipher=default_cipher, settings_str=""):
     """Decode a string using the specified cipher and settings."""
-    settings = unpack_settings_string(settings_str) if settings_str else default_settings
+    settings = unpack_settings_string(settings_str)
     settings = pad_and_trim_settings_list(settings)
 
     words = split_text(text)
